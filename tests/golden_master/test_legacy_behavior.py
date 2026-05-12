@@ -149,3 +149,72 @@ def test_cliente_corporativo_recebe_desconto(sis):
     pedido = sis.get_ped(id_ped)
 
     assert pedido['tot'] == pytest.approx(90.0)
+
+def test_get_ped_retorna_none_para_id_inexistente(sis):
+    assert sis.get_ped(9999) is None
+
+
+def test_upd_st_altera_status_para_enviado(sis):
+    itens = [
+        {'nome': 'produto1', 'p': 100, 'q': 1, 'tipo': 'normal'}
+    ]
+
+    id_ped = sis.add_ped('Joao', itens, 'normal')
+
+    sis.upd_st(id_ped, 'enviado')
+
+    pedido = sis.get_ped(id_ped)
+
+    assert pedido['st'] == 'enviado'
+
+
+def test_upd_st_altera_status_para_entregue(sis):
+    itens = [
+        {'nome': 'produto1', 'p': 100, 'q': 1, 'tipo': 'normal'}
+    ]
+
+    id_ped = sis.add_ped('Joao', itens, 'normal')
+
+    sis.upd_st(id_ped, 'entregue')
+
+    pedido = sis.get_ped(id_ped)
+
+    assert pedido['st'] == 'entregue'
+
+
+def test_ped_especial_cria_pedido_com_acrescimo(sis):
+    from legacy import PedEspecial
+
+    ped = PedEspecial()
+
+    itens = [
+        {'nome': 'produto1', 'p': 100, 'q': 1, 'tipo': 'normal'}
+    ]
+
+    id_ped = ped.add_ped('Cliente Especial', itens, 'especial')
+
+    pedido = ped.get_ped(id_ped)
+
+    assert pedido['tot'] == pytest.approx(115.0)
+
+    ped.close()
+
+
+def test_ped_especial_upd_st(sis):
+    from legacy import PedEspecial
+
+    ped = PedEspecial()
+
+    itens = [
+        {'nome': 'produto1', 'p': 100, 'q': 1, 'tipo': 'normal'}
+    ]
+
+    id_ped = ped.add_ped('Cliente Especial', itens, 'especial')
+
+    ped.upd_st(id_ped, 'aprovado')
+
+    pedido = ped.get_ped(id_ped)
+
+    assert pedido['st'] == 'aprovado'
+
+    ped.close()
