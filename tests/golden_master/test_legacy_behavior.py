@@ -42,6 +42,18 @@ def test_pedido_vip_aplica_desconto_de_5_por_cento(sis):
     assert pedido['tot'] == pytest.approx(95.0)
 
 
+def test_cliente_corporativo_recebe_desconto(sis):
+    itens = [
+        {'nome': 'produto1', 'p': 100, 'q': 1, 'tipo': 'normal'}
+    ]
+
+    id_ped = sis.add_ped('Empresa XYZ', itens, 'corporativo')
+
+    pedido = sis.get_ped(id_ped)
+
+    assert pedido['tot'] == pytest.approx(90.0)
+
+
 def test_pagamento_insuficiente_falha(sis):
     itens = [
         {'nome': 'produto1', 'p': 100, 'q': 1, 'tipo': 'normal'}
@@ -80,6 +92,18 @@ def test_boleto_nao_aprova_automaticamente(sis):
     assert pedido['st'] == 'pendente'
 
 
+def test_metodo_pagamento_invalido_retorna_false(sis):
+    itens = [
+        {'nome': 'produto1', 'p': 100, 'q': 1, 'tipo': 'normal'}
+    ]
+
+    id_ped = sis.add_ped('Joao', itens, 'normal')
+
+    resultado = sis.proc_pag(id_ped, 'bitcoin', 100)
+
+    assert resultado is False
+
+
 def test_validar_estoque_retorna_true_para_produtos_validos(sis):
     itens = [
         {'nome': 'produto1', 'p': 100, 'q': 1, 'tipo': 'normal'}
@@ -110,34 +134,6 @@ def test_cancelar_pedido_altera_status_para_cancelado(sis):
     assert pedido['st'] == 'cancelado'
 
 
-def test_metodo_pagamento_invalido_retorna_false(sis):
-    itens = [
-        {'nome': 'produto1', 'p': 100, 'q': 1, 'tipo': 'normal'}
-    ]
-
-    id_ped = sis.add_ped('Joao', itens, 'normal')
-
-    resultado = sis.proc_pag(id_ped, 'bitcoin', 100)
-
-    assert resultado is False
-
-
-def test_cliente_corporativo_recebe_desconto(sis):
-    itens = [
-        {'nome': 'produto1', 'p': 100, 'q': 1, 'tipo': 'normal'}
-    ]
-
-    id_ped = sis.add_ped('Empresa XYZ', itens, 'corporativo')
-
-    pedido = sis.get_ped(id_ped)
-
-    assert pedido['tot'] == pytest.approx(90.0)
-
-
-def test_get_ped_retorna_none_para_id_inexistente(sis):
-    assert sis.get_ped(9999) is None
-
-
 def test_upd_st_altera_status_para_enviado(sis):
     itens = [
         {'nome': 'produto1', 'p': 100, 'q': 1, 'tipo': 'normal'}
@@ -164,6 +160,10 @@ def test_upd_st_altera_status_para_entregue(sis):
     pedido = sis.get_ped(id_ped)
 
     assert pedido['st'] == 'entregue'
+
+
+def test_get_ped_retorna_none_para_id_inexistente(sis):
+    assert sis.get_ped(9999) is None
 
 
 def test_gerar_relatorio_vendas_cria_arquivo(sis):
@@ -266,3 +266,97 @@ def test_ped_especial_upd_st(tmp_path, monkeypatch):
     assert pedido['st'] == 'aprovado'
 
     ped.close()
+
+def test_item_desc20_aplica_desconto_corretamente(sis):
+    itens = [
+        {'nome': 'produto3', 'p': 200, 'q': 1, 'tipo': 'desc20'}
+    ]
+
+    id_ped = sis.add_ped('Cliente', itens, 'normal')
+
+    pedido = sis.get_ped(id_ped)
+
+    assert pedido['tot'] == pytest.approx(160.0)
+
+
+def test_item_frete_gratis_calcula_total(sis):
+    itens = [
+        {'nome': 'produto1', 'p': 100, 'q': 2, 'tipo': 'frete_gratis'}
+    ]
+
+    id_ped = sis.add_ped('Cliente', itens, 'normal')
+
+    pedido = sis.get_ped(id_ped)
+
+    assert pedido['tot'] == pytest.approx(200.0)
+
+
+def test_pagamento_cartao_aprova_pedido(sis):
+    itens = [
+        {'nome': 'produto1', 'p': 100, 'q': 1, 'tipo': 'normal'}
+    ]
+
+    id_ped = sis.add_ped('Joao', itens, 'normal')
+
+    resultado = sis.proc_pag(id_ped, 'cartao', 100)
+
+    pedido = sis.get_ped(id_ped)
+
+    assert resultado is True
+    assert pedido['st'] == 'aprovado'
+
+
+def test_cliente_normal_ganha_pontos_ao_entregar(sis, capsys):
+    itens = [
+        {'nome': 'produto1', 'p': 100, 'q': 1, 'tipo': 'normal'}
+    ]
+
+    id_ped = sis.add_ped('Joao', itens, 'normal')
+
+    sis.upd_st(id_ped, 'entregue')
+
+    saida = capsys.readouterr()
+
+    assert 'Cliente ganhou' in saida.out
+
+
+def test_cliente_vip_ganha_pontos_ao_entregar(sis, capsys):
+    itens = [
+        {'nome': 'produto1', 'p': 100, 'q': 1, 'tipo': 'normal'}
+    ]
+
+    id_ped = sis.add_ped('Maria', itens, 'vip')
+
+    sis.upd_st(id_ped, 'entregue')
+
+    saida = capsys.readouterr()
+
+    assert 'Cliente VIP ganhou' in saida.out
+
+
+def test_cliente_corporativo_ganha_pontos_ao_entregar(sis, capsys):
+    itens = [
+        {'nome': 'produto1', 'p': 100, 'q': 1, 'tipo': 'normal'}
+    ]
+
+    id_ped = sis.add_ped('Empresa XYZ', itens, 'corporativo')
+
+    sis.upd_st(id_ped, 'entregue')
+
+    saida = capsys.readouterr()
+
+    assert 'Cliente corporativo ganhou' in saida.out
+
+
+def test_validar_estoque_retorna_false_para_estoque_insuficiente(sis):
+    itens = [
+        {'nome': 'produto1', 'p': 100, 'q': 999, 'tipo': 'normal'}
+    ]
+
+    assert sis.validar_estoque(itens) is False
+
+
+def test_proc_pag_retorna_false_para_pedido_inexistente(sis):
+    resultado = sis.proc_pag(9999, 'pix', 100)
+
+    assert resultado is False
