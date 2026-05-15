@@ -2,11 +2,15 @@ from datetime import datetime
 
 from src.repositories.order_repository import OrderRepository
 
+from src.services.notification_service import (
+    NotificationService
+)
 
 class Sis:
 
     def __init__(self):
         self.repository = OrderRepository()
+        self.notification_service = NotificationService()
 
     def add_ped(self, n, its, t):
 
@@ -43,18 +47,7 @@ class Sis:
             t
         )
 
-        # notificações mantidas iguais
-        if t == 'normal':
-            print(f"Email enviado para {n}: Pedido recebido!")
-
-        elif t == 'vip':
-            print(f"Email enviado para {n}: Pedido recebido!")
-            print(f"SMS enviado para {n}: Pedido VIP recebido!")
-
-        elif t == 'corporativo':
-            print(f"Email enviado para {n}: Pedido recebido!")
-            print(f"Notificacao enviada ao gerente de conta de {n}")
-
+        self.notification_service.notify_new_order(n, t)
         return order_id
 
     def get_ped(self, id):
