@@ -1,33 +1,21 @@
-import sqlite3
-import json
 from datetime import datetime
+
+from src.repositories.order_repository import OrderRepository
 
 
 class Sis:
+
     def __init__(self):
-        self.db = sqlite3.connect('loja.db')
-        self.c = self.db.cursor()
-
-        self.c.execute('''
-            CREATE TABLE IF NOT EXISTS ped (
-                id INTEGER PRIMARY KEY,
-                cli TEXT,
-                itens TEXT,
-                tot REAL,
-                st TEXT,
-                dt TEXT,
-                tp TEXT
-            )
-        ''')
-
-        self.db.commit()
+        self.repository = OrderRepository()
 
     def add_ped(self, n, its, t):
+
         dt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
         tot = 0
 
         for i in its:
+
             if i['tipo'] == 'normal':
                 tot += i['p'] * i['q']
 
@@ -46,16 +34,16 @@ class Sis:
         elif t == 'corporativo':
             tot = tot * 0.90
 
-        its_str = json.dumps(its)
-
-        self.c.execute(
-            "INSERT INTO ped (cli, itens, tot, st, dt, tp) VALUES (?, ?, ?, ?, ?, ?)",
-            (n, its_str, tot, 'pendente', dt, t)
+        order_id = self.repository.save_order(
+            n,
+            its,
+            tot,
+            'pendente',
+            dt,
+            t
         )
 
-        self.db.commit()
-
-        # canal de notificacao depende do tipo de cliente
+        # notificações mantidas iguais
         if t == 'normal':
             print(f"Email enviado para {n}: Pedido recebido!")
 
@@ -67,63 +55,55 @@ class Sis:
             print(f"Email enviado para {n}: Pedido recebido!")
             print(f"Notificacao enviada ao gerente de conta de {n}")
 
-        return self.c.lastrowid
+        return order_id
 
     def get_ped(self, id):
-        self.c.execute("SELECT * FROM ped WHERE id = ?", (id,))
-        r = self.c.fetchone()
-
-        if r:
-            return {
-                'id': r[0],
-                'cli': r[1],
-                'itens': json.loads(r[2]),
-                'tot': r[3],
-                'st': r[4],
-                'dt': r[5],
-                'tp': r[6]
-            }
-
-        return None
+        return self.repository.get_order_by_id(id)
 
     def upd_st(self, id, s):
+
         p = self.get_ped(id)
 
         if p:
-            self.c.execute(
-                "UPDATE ped SET st = ? WHERE id = ?",
-                (s, id)
-            )
 
-            self.db.commit()
+            self.repository.update_status(id, s)
 
             if s == 'aprovado':
+
                 print(f"Email enviado para {p['cli']}: Pedido aprovado!")
 
                 if p['tp'] == 'vip':
                     print(f"SMS enviado para {p['cli']}: Pedido aprovado!")
 
             elif s == 'enviado':
+
                 print(f"Email enviado para {p['cli']}: Pedido enviado!")
 
             elif s == 'entregue':
+
                 print(f"Email enviado para {p['cli']}: Pedido entregue!")
 
                 if p['tp'] == 'vip':
+
                     pts = int(p['tot'] * 2)
+
                     print(f"Cliente VIP ganhou {pts} pontos!")
 
                 elif p['tp'] == 'corporativo':
+
                     pts = int(p['tot'] * 1.5)
+
                     print(f"Cliente corporativo ganhou {pts} pontos!")
 
                 else:
+
                     pts = int(p['tot'])
+
                     print(f"Cliente ganhou {pts} pontos!")
 
     def calc_tot_cli(self, n):
-        self.c.execute("SELECT * FROM ped WHERE cli = ?", (n,))
-        rs = self.c.fetchall()
+
+        rs = self.repository.get_orders_by_client(n)
 
         t = 0
 
@@ -133,15 +113,17 @@ class Sis:
         return t
 
     def gerar_rel(self, tipo):
+
         if tipo == 'vendas':
-            self.c.execute("SELECT * FROM ped")
-            rs = self.c.fetchall()
+
+            rs = self.repository.get_all_orders()
 
             print("=== RELATORIO DE VENDAS ===")
 
             tot_g = 0
 
             for r in rs:
+
                 print(
                     f"Pedido #{r[0]} - Cliente: {r[1]} - "
                     f"Total: R${r[3]:.2f} - Status: {r[4]}"
@@ -155,25 +137,36 @@ class Sis:
                 f.write(f"Total de vendas: {tot_g}")
 
         elif tipo == 'clientes':
-            self.c.execute("SELECT DISTINCT cli, tp FROM ped")
-            rs = self.c.fetchall()
+
+            rs = self.repository.get_all_orders()
+
+            clientes = {}
+
+            for r in rs:
+
+                nome = r[1]
+                tipo_cliente = r[6]
+
+                clientes[nome] = tipo_cliente
 
             print("=== RELATORIO DE CLIENTES ===")
 
-            for r in rs:
-                n = r[0]
-                tp = r[1]
-                tot = self.calc_tot_cli(n)
-
-                print(
-                    f"Cliente: {n} ({tp}) - Total gasto: R${tot:.2f}"
-                )
-
             with open('rel_clientes.txt', 'w') as f:
-                for r in rs:
-                    f.write(f"{r[0]},{r[1]}\n")
+
+                for nome, tipo_cliente in clientes.items():
+
+                    total = self.calc_tot_cli(nome)
+
+                    print(
+                        f"Cliente: {nome} "
+                        f"({tipo_cliente}) - "
+                        f"Total gasto: R${total:.2f}"
+                    )
+
+                    f.write(f"{nome},{tipo_cliente}\n")
 
     def proc_pag(self, id, m, vl):
+
         p = self.get_ped(id)
 
         if not p:
@@ -184,6 +177,7 @@ class Sis:
             return False
 
         if m == 'cartao':
+
             print("Processando pagamento com cartao...")
             print("Cartao validado!")
 
@@ -192,6 +186,7 @@ class Sis:
             return True
 
         elif m == 'pix':
+
             print("Gerando QR Code PIX...")
             print("PIX recebido!")
 
@@ -200,18 +195,20 @@ class Sis:
             return True
 
         elif m == 'boleto':
+
             print("Gerando boleto...")
             print("Boleto gerado!")
 
             return True
 
         else:
+
             print("Metodo de pagamento invalido!")
 
             return False
 
     def validar_estoque(self, its):
-        # TODO: integrar com sistema de estoque externo
+
         est = {
             'produto1': 100,
             'produto2': 50,
@@ -219,38 +216,41 @@ class Sis:
         }
 
         for i in its:
+
             if i['nome'] not in est:
+
                 print(f"Produto {i['nome']} nao encontrado!")
+
                 return False
 
             if est[i['nome']] < i['q']:
+
                 print(f"Estoque insuficiente para {i['nome']}!")
+
                 return False
 
         return True
 
     def cancelar_pedido(self, id):
-        # cancela sem validar regras de negocio
-        self.c.execute(
-            "UPDATE ped SET st = ? WHERE id = ?",
-            ('cancelado', id)
-        )
 
-        self.db.commit()
+        self.repository.update_status(id, 'cancelado')
 
         print(f"Pedido {id} cancelado")
 
     def close(self):
-        self.db.close()
+        self.repository.close()
 
 
 class PedEspecial(Sis):
+
     def add_ped(self, n, its, t):
+
         dt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
         tot = 0
 
         for i in its:
+
             if i['tipo'] == 'normal':
                 tot += i['p'] * i['q']
 
@@ -262,79 +262,28 @@ class PedEspecial(Sis):
 
         tot = tot * 1.15
 
-        its_str = json.dumps(its)
-
-        self.c.execute(
-            "INSERT INTO ped (cli, itens, tot, st, dt, tp) VALUES (?, ?, ?, ?, ?, ?)",
-            (n, its_str, tot, 'pendente', dt, t)
+        order_id = self.repository.save_order(
+            n,
+            its,
+            tot,
+            'pendente',
+            dt,
+            t
         )
 
-        self.db.commit()
+        print(
+            f"Email especial enviado para {n}: "
+            f"Pedido especial recebido!"
+        )
 
-        print(f"Email especial enviado para {n}: Pedido especial recebido!")
-
-        return self.c.lastrowid
+        return order_id
 
     def upd_st(self, id, s):
-        # PedEspecial pula direto para qualquer estado
-        # ignorando transicoes intermediarias do pai
+
         p = self.get_ped(id)
 
         if p:
-            self.c.execute(
-                "UPDATE ped SET st = ? WHERE id = ?",
-                (s, id)
-            )
 
-            self.db.commit()
+            self.repository.update_status(id, s)
 
             print(f"Pedido especial {id} -> {s}")
-
-
-def main():
-    s = Sis()
-
-    its1 = [
-        {'nome': 'produto1', 'p': 100, 'q': 2, 'tipo': 'normal'},
-        {'nome': 'produto2', 'p': 50, 'q': 1, 'tipo': 'desc10'}
-    ]
-
-    if s.validar_estoque(its1):
-        id1 = s.add_ped('Joao Silva', its1, 'normal')
-
-        print(f"Pedido {id1} criado!")
-
-        s.proc_pag(id1, 'cartao', 250)
-
-        s.upd_st(id1, 'enviado')
-        s.upd_st(id1, 'entregue')
-
-    its2 = [
-        {'nome': 'produto3', 'p': 200, 'q': 1, 'tipo': 'desc20'}
-    ]
-
-    if s.validar_estoque(its2):
-        id2 = s.add_ped('Maria Santos', its2, 'vip')
-
-        s.proc_pag(id2, 'pix', 160)
-
-    its3 = [
-        {'nome': 'produto1', 'p': 100, 'q': 5, 'tipo': 'normal'}
-    ]
-
-    if s.validar_estoque(its3):
-        id3 = s.add_ped('Empresa XYZ', its3, 'corporativo')
-
-        s.proc_pag(id3, 'boleto', 500)
-
-    s.gerar_rel('vendas')
-
-    print()
-
-    s.gerar_rel('clientes')
-
-    s.close()
-
-
-if __name__ == '__main__':
-    main()
