@@ -7,6 +7,7 @@ from src.services.notification_service import (
 
 from src.services.stock_service import StockService
 from src.services.report_service import ReportService
+from src.services.order_service import OrderService
 
 class Sis:
 
@@ -16,32 +17,16 @@ class Sis:
         self.notification_service = NotificationService()
         self.payment_service = PaymentService()
         self.report_service = ReportService()
+        self.order_service = OrderService()
 
     def add_ped(self, n, its, t):
 
-        dt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        dt = self.order_service.generate_date()
 
-        tot = 0
-
-        for i in its:
-
-            if i['tipo'] == 'normal':
-                tot += i['p'] * i['q']
-
-            elif i['tipo'] == 'desc10':
-                tot += i['p'] * i['q'] * 0.9
-
-            elif i['tipo'] == 'desc20':
-                tot += i['p'] * i['q'] * 0.8
-
-            elif i['tipo'] == 'frete_gratis':
-                tot += i['p'] * i['q']
-
-        if t == 'vip':
-            tot = tot * 0.95
-
-        elif t == 'corporativo':
-            tot = tot * 0.90
+        tot = self.order_service.calculate_total(
+            its,
+            t
+        )
 
         order_id = self.repository.save_order(
             n,
@@ -52,7 +37,11 @@ class Sis:
             t
         )
 
-        self.notification_service.notify_new_order(n, t)
+        self.notification_service.notify_new_order(
+            n,
+            t
+        )
+
         return order_id
 
     def get_ped(self, id):
