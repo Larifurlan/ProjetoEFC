@@ -1,12 +1,12 @@
 from datetime import datetime
 from src.services.payment_service import PaymentService
 from src.repositories.order_repository import OrderRepository
-
 from src.services.notification_service import (
     NotificationService
 )
 
 from src.services.stock_service import StockService
+from src.services.report_service import ReportService
 
 class Sis:
 
@@ -15,6 +15,8 @@ class Sis:
         self.stock_service = StockService()
         self.notification_service = NotificationService()
         self.payment_service = PaymentService()
+        self.report_service = ReportService()
+
     def add_ped(self, n, its, t):
 
         dt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -110,56 +112,20 @@ class Sis:
 
     def gerar_rel(self, tipo):
 
+        orders = self.repository.get_all_orders()
+
         if tipo == 'vendas':
 
-            rs = self.repository.get_all_orders()
-
-            print("=== RELATORIO DE VENDAS ===")
-
-            tot_g = 0
-
-            for r in rs:
-
-                print(
-                    f"Pedido #{r[0]} - Cliente: {r[1]} - "
-                    f"Total: R${r[3]:.2f} - Status: {r[4]}"
-                )
-
-                tot_g += r[3]
-
-            print(f"Total Geral: R${tot_g:.2f}")
-
-            with open('rel_vendas.txt', 'w') as f:
-                f.write(f"Total de vendas: {tot_g}")
+            self.report_service.generate_sales_report(
+                orders
+            )
 
         elif tipo == 'clientes':
 
-            rs = self.repository.get_all_orders()
-
-            clientes = {}
-
-            for r in rs:
-
-                nome = r[1]
-                tipo_cliente = r[6]
-
-                clientes[nome] = tipo_cliente
-
-            print("=== RELATORIO DE CLIENTES ===")
-
-            with open('rel_clientes.txt', 'w') as f:
-
-                for nome, tipo_cliente in clientes.items():
-
-                    total = self.calc_tot_cli(nome)
-
-                    print(
-                        f"Cliente: {nome} "
-                        f"({tipo_cliente}) - "
-                        f"Total gasto: R${total:.2f}"
-                    )
-
-                    f.write(f"{nome},{tipo_cliente}\n")
+            self.report_service.generate_clients_report(
+                orders,
+                self.calc_tot_cli
+            )
 
     def proc_pag(self, id, m, vl):
 
