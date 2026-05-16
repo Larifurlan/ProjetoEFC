@@ -1,5 +1,5 @@
 from datetime import datetime
-
+from src.services.payment_service import PaymentService
 from src.repositories.order_repository import OrderRepository
 
 from src.services.notification_service import (
@@ -11,7 +11,7 @@ class Sis:
     def __init__(self):
         self.repository = OrderRepository()
         self.notification_service = NotificationService()
-
+        self.payment_service = PaymentService()
     def add_ped(self, n, its, t):
 
         dt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -162,43 +162,23 @@ class Sis:
 
         p = self.get_ped(id)
 
-        if not p:
-            return False
+        result = self.payment_service.process_payment(
+            p,
+            m,
+            vl
+        )
 
-        if vl < p['tot']:
-            print("Valor insuficiente!")
-            return False
-
-        if m == 'cartao':
-
-            print("Processando pagamento com cartao...")
-            print("Cartao validado!")
+        if result == 'aprovado':
 
             self.upd_st(id, 'aprovado')
 
             return True
 
-        elif m == 'pix':
-
-            print("Gerando QR Code PIX...")
-            print("PIX recebido!")
-
-            self.upd_st(id, 'aprovado')
+        elif result == 'pendente':
 
             return True
 
-        elif m == 'boleto':
-
-            print("Gerando boleto...")
-            print("Boleto gerado!")
-
-            return True
-
-        else:
-
-            print("Metodo de pagamento invalido!")
-
-            return False
+        return False
 
     def validar_estoque(self, its):
 
