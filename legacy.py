@@ -6,10 +6,13 @@ from src.services.notification_service import (
     NotificationService
 )
 
+from src.services.stock_service import StockService
+
 class Sis:
 
     def __init__(self):
         self.repository = OrderRepository()
+        self.stock_service = StockService()
         self.notification_service = NotificationService()
         self.payment_service = PaymentService()
     def add_ped(self, n, its, t):
@@ -182,27 +185,7 @@ class Sis:
 
     def validar_estoque(self, its):
 
-        est = {
-            'produto1': 100,
-            'produto2': 50,
-            'produto3': 75
-        }
-
-        for i in its:
-
-            if i['nome'] not in est:
-
-                print(f"Produto {i['nome']} nao encontrado!")
-
-                return False
-
-            if est[i['nome']] < i['q']:
-
-                print(f"Estoque insuficiente para {i['nome']}!")
-
-                return False
-
-        return True
+        return self.stock_service.validate_stock(its)
 
     def cancelar_pedido(self, id):
 
