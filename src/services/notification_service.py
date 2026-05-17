@@ -1,5 +1,8 @@
-class NotificationService:
+from src.interfaces.services.notification_service_interface import (
+    NotificationServiceInterface,
+)
 
+class NotificationService(NotificationServiceInterface):
     def notify_new_order(self, customer_name, customer_type):
 
         if customer_type == 'normal':

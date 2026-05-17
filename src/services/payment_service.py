@@ -1,5 +1,9 @@
-class PaymentService:
+from src.interfaces.services.payment_service_interface import (
+    PaymentServiceInterface,
+)
 
+class PaymentService(PaymentServiceInterface):
+    
     def process_payment(self, order, method, value):
 
         if not order:

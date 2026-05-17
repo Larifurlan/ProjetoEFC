@@ -1,5 +1,8 @@
-class ReportService:
+from src.interfaces.services.report_service_interface import (
+    ReportServiceInterface,
+)
 
+class ReportService(ReportServiceInterface):
     def generate_sales_report(self, orders):
 
         print("=== RELATORIO DE VENDAS ===")

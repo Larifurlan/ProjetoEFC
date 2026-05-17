@@ -1,5 +1,7 @@
-class StockService:
-
+from src.interfaces.services.stock_service_interface import (
+    StockServiceInterface,
+)
+class StockService(StockServiceInterface):
     def validate_stock(self, items):
 
         stock = {
