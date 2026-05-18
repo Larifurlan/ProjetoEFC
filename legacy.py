@@ -101,36 +101,24 @@ class Sis:
 
             if s == 'aprovado':
 
-                print(f"Email enviado para {p['cli']}: Pedido aprovado!")
-
-                if p['tp'] == 'vip':
-                    print(f"SMS enviado para {p['cli']}: Pedido aprovado!")
+                self.notification_service.notify_order_approved(
+                    p['cli'],
+                    p['tp']
+                )
 
             elif s == 'enviado':
 
-                print(f"Email enviado para {p['cli']}: Pedido enviado!")
+                self.notification_service.notify_order_sent(
+                    p['cli']
+                )
 
             elif s == 'entregue':
 
-                print(f"Email enviado para {p['cli']}: Pedido entregue!")
-
-                if p['tp'] == 'vip':
-
-                    pts = int(p['tot'] * 2)
-
-                    print(f"Cliente VIP ganhou {pts} pontos!")
-
-                elif p['tp'] == 'corporativo':
-
-                    pts = int(p['tot'] * 1.5)
-
-                    print(f"Cliente corporativo ganhou {pts} pontos!")
-
-                else:
-
-                    pts = int(p['tot'])
-
-                    print(f"Cliente ganhou {pts} pontos!")
+                self.notification_service.notify_order_delivered(
+                    p['cli'],
+                    p['tp'],
+                    p['tot']
+                )
 
     def calc_tot_cli(self, n):
 

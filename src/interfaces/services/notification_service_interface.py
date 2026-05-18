@@ -10,3 +10,27 @@ class NotificationServiceInterface(ABC):
         customer_type
     ):
         pass
+
+    @abstractmethod
+    def notify_order_approved(
+        self,
+        customer_name,
+        customer_type
+    ):
+        pass
+
+    @abstractmethod
+    def notify_order_sent(
+        self,
+        customer_name
+    ):
+        pass
+
+    @abstractmethod
+    def notify_order_delivered(
+        self,
+        customer_name,
+        customer_type,
+        total
+    ):
+        pass
