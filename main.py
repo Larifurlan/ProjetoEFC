@@ -18,7 +18,7 @@ stock_service = StockService()
 
 report_service = ReportService()
 
-order_service = OrderService()
+order_service = OrderService()   
 
 
 sis = Sis(

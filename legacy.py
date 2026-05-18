@@ -1,7 +1,5 @@
 from datetime import datetime
-from src.services.notification_service import (
-    NotificationService
-)
+
 from src.services.payment_service import PaymentService
 from src.repositories.order_repository import OrderRepository
 from src.services.notification_service import NotificationService
@@ -38,10 +36,12 @@ class Sis:
         notification_service: NotificationServiceInterface = None,
         stock_service: StockServiceInterface = None,
         report_service: ReportServiceInterface = None,
-        order_service = None,
+        order_service: OrderService = None,
     ):
 
-        self.repository = repository or OrderRepository()
+        self.repository = (
+            repository or OrderRepository()
+        )
 
         self.payment_service = (
             payment_service or PaymentService()
