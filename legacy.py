@@ -1,42 +1,43 @@
 from datetime import datetime
-
-from src.services.payment_service import PaymentService
-from src.repositories.order_repository import OrderRepository
-from src.services.notification_service import NotificationService
-from src.services.stock_service import StockService
-from src.services.report_service import ReportService
-from src.services.order_service import OrderService
-
-from src.repositories.interfaces.order_repository_interface import (
-    OrderRepositoryInterface,
-)
-
-from src.interfaces.services.payment_service_interface import (
-    PaymentServiceInterface,
-)
+from typing import Optional
 
 from src.interfaces.services.notification_service_interface import (
     NotificationServiceInterface,
 )
-
-from src.interfaces.services.stock_service_interface import (
-    StockServiceInterface,
+from src.interfaces.services.payment_service_interface import (
+    PaymentServiceInterface,
 )
-
 from src.interfaces.services.report_service_interface import (
     ReportServiceInterface,
 )
+from src.interfaces.services.stock_service_interface import (
+    StockServiceInterface,
+)
+from src.repositories.interfaces.order_repository_interface import (
+    OrderRepositoryInterface,
+)
+from src.repositories.order_repository import OrderRepository
+from src.services.notification_service import NotificationService
+from src.services.order_service import OrderService
+from src.services.payment_service import PaymentService
+from src.services.report_service import ReportService
+from src.services.stock_service import StockService
+
 
 class Sis:
 
     def __init__(
         self,
-        repository: OrderRepositoryInterface = None,
-        payment_service: PaymentServiceInterface = None,
-        notification_service: NotificationServiceInterface = None,
-        stock_service: StockServiceInterface = None,
-        report_service: ReportServiceInterface = None,
-        order_service: OrderService = None,
+        repository: Optional[OrderRepositoryInterface] = None,
+        payment_service: Optional[PaymentServiceInterface] = None,
+        notification_service: Optional[
+            NotificationServiceInterface
+        ] = None,
+        stock_service: Optional[StockServiceInterface] = None,
+        report_service: Optional[
+            ReportServiceInterface
+        ] = None,
+        order_service: Optional[OrderService] = None,
     ):
 
         self.repository = (
