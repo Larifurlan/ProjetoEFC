@@ -1,23 +1,67 @@
 from datetime import datetime
-from src.services.payment_service import PaymentService
-from src.repositories.order_repository import OrderRepository
 from src.services.notification_service import (
     NotificationService
 )
-
+from src.services.payment_service import PaymentService
+from src.repositories.order_repository import OrderRepository
+from src.services.notification_service import NotificationService
 from src.services.stock_service import StockService
 from src.services.report_service import ReportService
 from src.services.order_service import OrderService
 
+from src.repositories.interfaces.order_repository_interface import (
+    OrderRepositoryInterface,
+)
+
+from src.interfaces.services.payment_service_interface import (
+    PaymentServiceInterface,
+)
+
+from src.interfaces.services.notification_service_interface import (
+    NotificationServiceInterface,
+)
+
+from src.interfaces.services.stock_service_interface import (
+    StockServiceInterface,
+)
+
+from src.interfaces.services.report_service_interface import (
+    ReportServiceInterface,
+)
+
 class Sis:
 
-    def __init__(self):
-        self.repository = OrderRepository()
-        self.stock_service = StockService()
-        self.notification_service = NotificationService()
-        self.payment_service = PaymentService()
-        self.report_service = ReportService()
-        self.order_service = OrderService()
+    def __init__(
+        self,
+        repository: OrderRepositoryInterface = None,
+        payment_service: PaymentServiceInterface = None,
+        notification_service: NotificationServiceInterface = None,
+        stock_service: StockServiceInterface = None,
+        report_service: ReportServiceInterface = None,
+        order_service = None,
+    ):
+
+        self.repository = repository or OrderRepository()
+
+        self.payment_service = (
+            payment_service or PaymentService()
+        )
+
+        self.notification_service = (
+            notification_service or NotificationService()
+        )
+
+        self.stock_service = (
+            stock_service or StockService()
+        )
+
+        self.report_service = (
+            report_service or ReportService()
+        )
+
+        self.order_service = (
+            order_service or OrderService()
+        )
 
     def add_ped(self, n, its, t):
 
