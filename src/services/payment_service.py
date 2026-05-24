@@ -1,44 +1,48 @@
+from src.domain import OrderRecord, PaymentStatus
 from src.interfaces.services.payment_service_interface import (
     PaymentServiceInterface,
+)
+from src.strategies.payment_strategy import (
+    PaymentStrategy,
+    default_payment_strategies,
 )
 
 
 class PaymentService(PaymentServiceInterface):
-    
-    def process_payment(self, order, method, value):
+    def __init__(
+        self,
+        strategies: list[PaymentStrategy] | None = None,
+    ) -> None:
+        self.strategies = (
+            strategies
+            if strategies is not None
+            else default_payment_strategies()
+        )
 
+    def process_payment(
+        self,
+        order: OrderRecord | None,
+        method: str,
+        value: float,
+    ) -> PaymentStatus:
         if not order:
-            return False
+            return PaymentStatus.REJECTED
 
-        if value < order['tot']:
+        strategy = self._find_strategy(method)
 
-            print("Valor insuficiente!")
-
-            return False
-
-        if method == 'cartao':
-
-            print("Processando pagamento com cartao...")
-            print("Cartao validado!")
-
-            return 'aprovado'
-
-        elif method == 'pix':
-
-            print("Gerando QR Code PIX...")
-            print("PIX recebido!")
-
-            return 'aprovado'
-
-        elif method == 'boleto':
-
-            print("Gerando boleto...")
-            print("Boleto gerado!")
-
-            return 'pendente'
-
-        else:
-
+        if strategy is None:
             print("Metodo de pagamento invalido!")
+            return PaymentStatus.REJECTED
 
-            return False
+        if value < strategy.required_amount(order):
+            print("Valor insuficiente!")
+            return PaymentStatus.REJECTED
+
+        return strategy.process(order, value)
+
+    def _find_strategy(self, method: str) -> PaymentStrategy | None:
+        for strategy in self.strategies:
+            if strategy.supports(method):
+                return strategy
+
+        return None

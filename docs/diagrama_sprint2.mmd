@@ -1,0 +1,59 @@
+classDiagram
+    class Sis {
+        +add_ped(nome, itens, tipo)
+        +proc_pag(id, metodo, valor)
+        +upd_st(id, status)
+    }
+    class OrderFactory {
+        <<interface>>
+        +create_order(nome, itens, tipo)
+    }
+    class DefaultOrderFactory
+    class OrderService {
+        +calculate_total(itens, tipo)
+    }
+    class ItemDiscountStrategy {
+        <<interface>>
+        +supports(item)
+        +calculate(item)
+    }
+    class CustomerDiscountStrategy {
+        <<interface>>
+        +supports(tipo)
+        +apply(total)
+    }
+    class PaymentService {
+        +process_payment(pedido, metodo, valor)
+    }
+    class PaymentStrategy {
+        <<interface>>
+        +supports(metodo)
+        +process(pedido, valor)
+    }
+    class NotificationService {
+        +notify_new_order(nome, tipo)
+        +notify_order_approved(nome, tipo)
+    }
+    class NotificationObserver {
+        <<interface>>
+        +supports(evento)
+        +update(evento)
+    }
+    class OrderRepositoryInterface {
+        <<interface>>
+        +save_order()
+        +get_order_by_id()
+    }
+    class OrderRepository
+
+    Sis --> OrderFactory
+    Sis --> PaymentService
+    Sis --> NotificationService
+    Sis --> OrderRepositoryInterface
+    DefaultOrderFactory ..|> OrderFactory
+    DefaultOrderFactory --> OrderService
+    OrderService --> ItemDiscountStrategy
+    OrderService --> CustomerDiscountStrategy
+    PaymentService --> PaymentStrategy
+    NotificationService --> NotificationObserver
+    OrderRepository ..|> OrderRepositoryInterface

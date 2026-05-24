@@ -8,7 +8,7 @@ lint:
 	ruff check .
 
 type:
-	mypy src/
+	mypy --strict src/
 
 complexity:
 	radon cc . -s -a
