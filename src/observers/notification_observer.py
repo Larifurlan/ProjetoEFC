@@ -1,13 +1,15 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
+_EVENT_NEW_ORDER = "new_order"
+_EVENT_APPROVED = "approved"
+_EVENT_SENT = "sent"
+_EVENT_DELIVERED = "delivered"
+
 
 @dataclass(frozen=True)
 class NotificationEvent:
     name: str
-    customer_name: str
-    customer_type: str
-    total: float | None = None
 
 
 class NotificationObserver(ABC):
@@ -22,10 +24,10 @@ class NotificationObserver(ABC):
 
 class EmailNotificationObserver(NotificationObserver):
     _messages = {
-        "new_order": "Pedido recebido!",
-        "approved": "Pedido aprovado!",
-        "sent": "Pedido enviado!",
-        "delivered": "Pedido entregue!",
+        _EVENT_NEW_ORDER: "Pedido recebido!",
+        _EVENT_APPROVED: "Pedido aprovado!",
+        _EVENT_SENT: "Pedido enviado!",
+        _EVENT_DELIVERED: "Pedido entregue!",
     }
 
     def supports(self, event: NotificationEvent) -> bool:
@@ -42,16 +44,15 @@ class VipSmsNotificationObserver(NotificationObserver):
     def supports(self, event: NotificationEvent) -> bool:
         return (
             event.customer_type == "vip"
-            and event.name in {"new_order", "approved"}
+            and event.name in {_EVENT_NEW_ORDER, _EVENT_APPROVED}
         )
 
     def update(self, event: NotificationEvent) -> None:
-        if event.name == "new_order":
+        if event.name == _EVENT_NEW_ORDER:
             print(
                 f"SMS enviado para {event.customer_name}: "
                 f"Pedido VIP recebido!"
             )
-            return
 
         print(
             f"SMS enviado para {event.customer_name}: "
@@ -63,7 +64,7 @@ class AccountManagerNotificationObserver(NotificationObserver):
     def supports(self, event: NotificationEvent) -> bool:
         return (
             event.customer_type == "corporativo"
-            and event.name == "new_order"
+            and event.name == _EVENT_NEW_ORDER
         )
 
     def update(self, event: NotificationEvent) -> None:
@@ -75,7 +76,7 @@ class AccountManagerNotificationObserver(NotificationObserver):
 
 class LoyaltyPointsObserver(NotificationObserver):
     def supports(self, event: NotificationEvent) -> bool:
-        return event.name == "delivered" and event.total is not None
+        return event.name == _EVENT_DELIVERED and event.total is not None
 
     def update(self, event: NotificationEvent) -> None:
         total = event.total or 0.0
