@@ -10,6 +10,9 @@ _EVENT_DELIVERED = "delivered"
 @dataclass(frozen=True)
 class NotificationEvent:
     name: str
+    customer_name: str = ""
+    customer_type: str = ""
+    total: float | None = None
 
 
 class NotificationObserver(ABC):
